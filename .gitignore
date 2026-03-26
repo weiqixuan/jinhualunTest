@@ -1,0 +1,7 @@
+node_modules
+dist
+dist-server
+.tmp
+.agents
+.env
+server/data/users.json

@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "outDir": "dist-server",
+    "rootDir": "."
+  },
+  "include": ["api/**/*.ts", "server/**/*.ts", "src/domain/**/*.ts", "src/mock/**/*.ts"],
+  "exclude": ["dist-server", "node_modules"]
+}
