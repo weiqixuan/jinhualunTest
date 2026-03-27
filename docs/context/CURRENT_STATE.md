@@ -49,6 +49,7 @@
   - runtime auth repository selection with Prisma as the deploy target
   - Vercel static-site + API split instead of Render single-service hosting
   - `build:vercel` for Vercel builds
+  - explicit CommonJS-compatible Vercel API entry files under `api/*`
   - removal of `render.yaml` and `serve:render`
   - server tests updated to match the API-only server shape
   - a dedicated regression test for the Vercel catch-all API handler
@@ -75,11 +76,13 @@
   - mock follow-up query honoring an explicit last-month time range
   - unknown `/api/*` routes returning JSON 404 in the API-only server shape
 - `npm run build` passes on 2026-03-27.
+- `npm run build:server` passes on 2026-03-27 after converting `api/*` entry files to explicit CommonJS-compatible source.
 - `cmd /c "set VERCEL_ENV=preview&&npm run build:vercel"` passes on 2026-03-27:
   - frontend + server build succeed
   - Prisma migrate/seed is skipped outside production as intended
 - Compiled Vercel handler smoke verification on 2026-03-27:
   - `dist-server/api/[...route].js` exports a callable handler
+  - compiled `api/*` entry output now uses `require(...)` + `module.exports`, matching the Node CommonJS load path that Vercel used at runtime
 - Remaining build warnings:
   - main entrypoint is about `848 KiB`
   - async dashboard vendor chunk is about `1.08 MiB`
@@ -95,22 +98,19 @@
   - preview skip is covered
   - production and forced execution paths are covered
   - migrate/seed failure propagation is covered
+- Manual deployment debugging on 2026-03-27 found and resolved a Vercel runtime compatibility issue:
+  - Vercel was loading `api/[...route].js` as CommonJS
+  - the source API entry files were being emitted as ESM by Vercel's build path because the root `tsconfig.json` uses `module: ESNext`
+  - `api/[...route].ts` and `api/index.ts` now use explicit CommonJS-compatible source so the runtime no longer depends on Vercel's module-format inference
 
 ## Next Step
-- In the Vercel Dashboard, import the repo `https://github.com/weiqixuan/jinhualunCode` or the intended public repo source.
-- Set `Root Directory = jinhualunCode`.
-- Install Prisma Postgres from the Vercel Marketplace for this project so `DATABASE_URL` is injected.
-- Set:
-  - `NODE_ENV=production`
-  - `AUTH_STORAGE=prisma`
-  - `JWT_SECRET`
-  - `AUTH_COOKIE_NAME=jinhualun_session`
-  - `AUTH_TOKEN_TTL_SECONDS=604800`
-  - `DEMO_USER_EMAIL`
-  - `DEMO_USER_PASSWORD`
-  - `DEMO_USER_DISPLAY_NAME`
-- Use `buildCommand = npm run build:vercel` and `outputDirectory = dist` if the Dashboard does not auto-detect `vercel.json`.
-- Deploy and verify the public HTTPS URL plus one protected Mock Agent query.
+- Redeploy the current Vercel project from the latest commit that includes the API entry CommonJS compatibility fix.
+- Verify:
+  - `/api/health` returns JSON instead of `FUNCTION_INVOCATION_FAILED`
+  - `/api/auth/me` returns `200 { user: null }` for a guest session
+  - the login/register flow works
+  - one protected Mock Agent query succeeds
+- If the runtime still fails, inspect the Vercel Function Logs for the new first error instead of the previous ESM/CommonJS mismatch.
 
 ## Key Files
 - `vercel.json`
@@ -139,6 +139,7 @@
 - The repository root is `D:/wqxCode/wqx_code`, so the Vercel project must build from `jinhualunCode` rather than the monorepo root.
 - The current remote/deployment source must be publicly reachable by Vercel or connected through the user Dashboard.
 - `build:vercel` only runs Prisma migrate/seed on production Vercel builds or when `VERCEL_FORCE_DB_DEPLOY=1`, so the deployment still depends on a reachable PostgreSQL connection on that allowed branch.
+- The latest live Vercel deployment has not yet been re-verified after the API entry CommonJS compatibility fix; a redeploy is still required.
 - Local development still falls back to file storage when `DATABASE_URL` is absent; the true online-demo path requires `AUTH_STORAGE=prisma`.
 - The architecture is still mixed: authentication runs behind a real backend/database boundary, while business data still comes from frontend mock services.
 - The Agent still queries the static business snapshot derived from `src/mock/*`, not a real business database.

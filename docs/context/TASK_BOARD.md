@@ -31,6 +31,7 @@
 - Add Vercel deployment config plus catch-all API function entry
 - Add automated verification for the Vercel API entrypoint
 - Add automated verification for the Vercel DB deploy gate
+- Fix the Vercel API runtime module-format mismatch that caused `FUNCTION_INVOCATION_FAILED`
 
 ## Doing
 - None

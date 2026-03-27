@@ -18,6 +18,7 @@
 - Agent intelligent-query feature: done
 - Vercel-target deployment refactor: done
 - Vercel DB deploy gate automated coverage: done
+- Vercel API runtime CommonJS compatibility fix: done
 - Actual Vercel publication: not done yet
 
 ## Latest Implementation Scope
@@ -39,11 +40,13 @@
 
 ## Verification Snapshot
 - `node --test scripts/vercel-db-deploy.test.cjs`: passed
+- `npm run build:server`: passed after the API entry compatibility fix
 - `npm run test:server`: passed
 - `npm run build`: passed
 - `cmd /c "set VERCEL_ENV=preview&&npm run build:vercel"`: passed and skipped DB deploy outside production
 - Vercel handler smoke check:
   - compiled `dist-server/api/[...route].js` exports a callable handler
+  - compiled `dist-server/api/[...route].js` now uses CommonJS syntax instead of ESM import syntax
 - Remaining warnings:
   - webpack bundle-size warnings only
 
@@ -51,14 +54,14 @@
 - Manual review for the Vercel migration found no unresolved blocking correctness issue after the refactor.
 - Independent reviewer-agent re-review found no remaining blocking code-level issue after the DB-deploy guard and `/api` root fixes.
 - The Vercel DB deploy gate now has direct automated coverage for preview skip, production run, forced run, and failure propagation.
+- Manual deployment debugging found that the live Vercel runtime was loading `api/[...route].js` as CommonJS while the source entry was emitted as ESM; the API entry files were converted to explicit CommonJS-compatible source.
 
 ## Recommended Next Task
-1. Open the Vercel Dashboard while signed in.
-2. Import the intended repo and set `Root Directory = jinhualunCode`.
-3. Install Prisma Postgres from the Vercel Marketplace for the project.
-4. Confirm the project uses `buildCommand = npm run build:vercel` and `outputDirectory = dist`.
-5. Set `NODE_ENV`, `AUTH_STORAGE`, `JWT_SECRET`, `AUTH_COOKIE_NAME`, `AUTH_TOKEN_TTL_SECONDS`, and `DEMO_USER_*`.
-6. Deploy and verify `/`, `/api/health`, auth flows, and one protected Mock Agent query.
+1. Redeploy the Vercel project from the latest commit containing the API entry CommonJS compatibility fix.
+2. Verify `/api/health` no longer returns `FUNCTION_INVOCATION_FAILED`.
+3. Verify `/api/auth/me` returns `200 { user: null }` as a guest.
+4. Verify login/register and one protected Mock Agent query.
+5. If a new runtime error remains, inspect the latest Vercel Function Log rather than the previous ESM/CommonJS crash.
 
 ## Notes
 - The repo may appear as untracked from the parent workspace perspective. Do not use destructive git cleanup.
@@ -67,3 +70,4 @@
 - The Agent is Mock-only and no longer depends on `OPENAI_*` environment variables.
 - If you run the compiled backend manually, use `node dist-server/server/index.js`; this is now API-only and no longer serves the frontend static bundle.
 - The most obvious remaining internal quality gap is targeted dashboard aggregation and refresh-state coverage.
+- The previous live-runtime crash signature was `SyntaxError: Cannot use import statement outside a module` from `api/[...route].js`; that exact issue should be gone after redeploying the latest commit.

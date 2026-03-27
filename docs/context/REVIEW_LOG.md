@@ -378,3 +378,29 @@
 - Live Vercel publication is still blocked on an authenticated external deployment session.
 - Dashboard aggregation and refresh-state logic still lack targeted automated regression coverage.
 - Bundle-size warnings remain.
+
+## 2026-03-27
+
+### Scope
+- `api/[...route].ts`
+- `api/index.ts`
+- `api/vercel.entry.test.ts`
+- `docs/context/*`
+
+### Review Mode
+- Manual review only in this session.
+- Independent reviewer-agent pass was not executed because no explicit user authorization for delegation was given in this conversation.
+
+### Findings
+- High: the live Vercel runtime was loading `api/[...route].js` as CommonJS while the deployed source still contained ESM `import`, causing `FUNCTION_INVOCATION_FAILED` before `/api/health` or `/api/auth/me` could run.
+- Low: the local `tsconfig.server.json` CommonJS output hid this problem because it differs from the Vercel API build path used in production.
+
+### Resolved
+- Converted the Vercel API entry files to explicit CommonJS-compatible source.
+- Updated the regression test to load the handlers with `require`, matching the Node/Vercel load path.
+- Re-ran `npm run build:server`, `npm run test:server`, and preview-mode `build:vercel` successfully.
+
+### Remaining Risks
+- The fix has been verified locally but still requires a new Vercel redeploy to validate the live runtime.
+- Dashboard aggregation and refresh-state logic still lack targeted automated regression coverage.
+- Bundle-size warnings remain.

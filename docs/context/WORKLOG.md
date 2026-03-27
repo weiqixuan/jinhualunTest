@@ -471,3 +471,33 @@
 ### Notes
 - The remaining highest-value external step is still Vercel Dashboard publication
 - The most obvious remaining internal automated-test gap is dashboard aggregation and refresh-state coverage
+
+## 2026-03-27
+
+### Task: fix the live Vercel API runtime crash caused by an ESM/CommonJS mismatch
+- Reproduced from the user-provided Vercel Function Logs that the deployed `api/[...route].js` was being loaded as CommonJS while its contents still used ESM `import`
+- Traced the mismatch to Vercel's API build path using the root `tsconfig.json` shape rather than the local server-build CommonJS output
+- Converted `api/[...route].ts` and `api/index.ts` to explicit CommonJS-compatible source using `require(...)` plus `export =`
+- Updated the Vercel entry regression test so it loads the handlers through `require`, matching the runtime load mode
+- Confirmed the compiled `dist-server/api/*` output now uses `require(...)` and `module.exports`
+
+### Files
+- `api/[...route].ts`
+- `api/index.ts`
+- `api/vercel.entry.test.ts`
+- `docs/context/CURRENT_STATE.md`
+- `docs/context/TASK_BOARD.md`
+- `docs/context/HANDOFF.md`
+- `docs/context/WORKLOG.md`
+- `docs/context/REVIEW_LOG.md`
+- `docs/context/DECISIONS.md`
+
+### Verification
+- Ran `npm run build:server`
+- Confirmed `dist-server/api/[...route].js` uses CommonJS syntax
+- Ran `npm run test:server`
+- Ran `cmd /c "set VERCEL_ENV=preview&&npm run build:vercel"`
+
+### Notes
+- Static frontend deployment was already healthy; the failure was isolated to the Vercel `/api` runtime path
+- A new Vercel redeploy is still required before the live deployment picks up this fix

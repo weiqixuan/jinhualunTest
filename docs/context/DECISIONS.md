@@ -237,3 +237,13 @@
   - the recommended Vercel database path is Prisma Postgres
   - production auth still requires `AUTH_STORAGE=prisma`
   - `build:vercel` assumes a reachable PostgreSQL database so migrations and seed can run during build
+
+### Decision: make the Vercel API entry files explicit CommonJS-compatible source
+- Why:
+  - the root `tsconfig.json` keeps frontend code on `module: ESNext`
+  - the live Vercel API build path emitted `api/[...route].js` with ESM `import`, but the Node runtime loaded that file as CommonJS and crashed before request handling
+  - changing the API entry files directly is a smaller and safer fix than changing the package-wide module mode or the frontend TypeScript module target
+- Impact:
+  - `api/[...route].ts` and `api/index.ts` now use `require(...)` plus `export =`
+  - the Vercel entry regression test now loads the handlers through `require`
+  - frontend TypeScript stays on `module: ESNext` while the Vercel API boundary remains Node CommonJS-compatible
