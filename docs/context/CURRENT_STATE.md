@@ -6,6 +6,7 @@
   - Prisma/PostgreSQL-backed auth persistence
   - Vercel deployment config in `vercel.json`
   - Vercel Node function entry at `api/[...route].js`
+  - explicit nested Vercel API wrappers at `api/auth/[...route].js` and `api/agent/[...route].js`
   - static frontend output from `dist/`
 - The Agent bonus feature remains demo-ready in Mock-only mode:
   - protected `POST /api/agent/query`
@@ -83,6 +84,7 @@
 - Compiled Vercel handler smoke verification on 2026-03-27:
   - `dist-server/server/app.js` exports a callable `createApp`
   - `api/[...route].js` and `api/index.js` load `../dist-server/server/app.js` through `require(...)`, matching the Node CommonJS load path that Vercel used at runtime
+  - nested wrapper handlers under `api/auth/*` and `api/agent/*` route `/api/auth/me` and `/api/agent/query` correctly in local verification
 - Remaining build warnings:
   - main entrypoint is about `848 KiB`
   - async dashboard vendor chunk is about `1.08 MiB`
@@ -102,6 +104,7 @@
   - Vercel was loading `api/[...route].js` as CommonJS
   - the source TypeScript API entry files were being emitted as ESM by Vercel's build path because the root `tsconfig.json` uses `module: ESNext`
   - the Vercel API boundary now uses source `.js` wrappers that load the prebuilt CommonJS server output from `dist-server/server/app.js`
+  - because the live deployment still returned a Vercel platform 404 for `/api/auth/me` while `/api/health` was already healthy, nested wrappers were added for `/api/auth/*` and `/api/agent/*` so multi-segment API paths no longer depend on the root catch-all matching behavior
 
 ## Next Step
 - Redeploy the current Vercel project from the latest commit that includes the API entry CommonJS compatibility fix.
@@ -116,6 +119,8 @@
 - `vercel.json`
 - `api/[...route].js`
 - `api/index.js`
+- `api/auth/[...route].js`
+- `api/agent/[...route].js`
 - `api/vercel.entry.test.cjs`
 - `prisma/schema.prisma`
 - `prisma/migrations/*`
@@ -139,7 +144,7 @@
 - The repository root is `D:/wqxCode/wqx_code`, so the Vercel project must build from `jinhualunCode` rather than the monorepo root.
 - The current remote/deployment source must be publicly reachable by Vercel or connected through the user Dashboard.
 - `build:vercel` only runs Prisma migrate/seed on production Vercel builds or when `VERCEL_FORCE_DB_DEPLOY=1`, so the deployment still depends on a reachable PostgreSQL connection on that allowed branch.
-- The latest live Vercel deployment has not yet been re-verified after switching the API boundary to source `.js` wrappers; a redeploy is still required.
+- The latest live Vercel deployment has not yet been re-verified after adding the nested `api/auth/*` and `api/agent/*` wrappers; a redeploy is still required.
 - Local development still falls back to file storage when `DATABASE_URL` is absent; the true online-demo path requires `AUTH_STORAGE=prisma`.
 - The architecture is still mixed: authentication runs behind a real backend/database boundary, while business data still comes from frontend mock services.
 - The Agent still queries the static business snapshot derived from `src/mock/*`, not a real business database.

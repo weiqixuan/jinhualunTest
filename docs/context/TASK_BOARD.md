@@ -32,6 +32,7 @@
 - Add automated verification for the Vercel API entrypoint
 - Add automated verification for the Vercel DB deploy gate
 - Fix the Vercel API runtime module-format mismatch that caused `FUNCTION_INVOCATION_FAILED`
+- Add nested Vercel API wrappers so `/api/auth/*` and `/api/agent/*` do not depend on root catch-all matching
 
 ## Doing
 - None

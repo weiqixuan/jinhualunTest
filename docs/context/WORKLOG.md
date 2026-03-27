@@ -502,3 +502,28 @@
 ### Notes
 - Static frontend deployment was already healthy; the failure was isolated to the Vercel `/api` runtime path
 - A new Vercel redeploy is still required before the live deployment picks up this fix
+
+## 2026-03-27
+
+### Task: add nested Vercel API wrappers for auth and agent paths
+- Confirmed locally that the source `.js` root wrapper returns `200` for `/api/auth/me`, so the remaining live 404 was not caused by the Express auth route itself
+- In response to the live Vercel symptom where `/api/health` was healthy but `/api/auth/me` still returned a Vercel platform 404, added explicit nested wrappers for `/api/auth/*` and `/api/agent/*`
+- Extended the Vercel entry regression test to verify `/api/auth/me` returns guest-safe `200 { user: null }` and `/api/agent/query` still returns `401 UNAUTHORIZED` without a session
+
+### Files
+- `api/auth/[...route].js`
+- `api/agent/[...route].js`
+- `api/vercel.entry.test.cjs`
+- `docs/context/CURRENT_STATE.md`
+- `docs/context/TASK_BOARD.md`
+- `docs/context/HANDOFF.md`
+- `docs/context/WORKLOG.md`
+
+### Verification
+- Ran a direct local smoke check through `api/auth/[...route].js` and `api/agent/[...route].js`
+- Ran `npm run test:server`
+- Ran `cmd /c "set VERCEL_ENV=preview&&npm run build:vercel"`
+
+### Notes
+- This fix is specifically meant to remove any dependency on root catch-all matching for multi-segment auth/agent routes in Vercel
+- A new Vercel redeploy is still required before the live deployment picks up this fix

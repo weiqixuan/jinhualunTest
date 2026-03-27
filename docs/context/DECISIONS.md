@@ -248,3 +248,13 @@
   - `api/[...route].js` and `api/index.js` now load `../dist-server/server/app.js`
   - the Vercel entry regression test now lives as `api/vercel.entry.test.cjs` and loads the handlers through `require`
   - frontend TypeScript stays on `module: ESNext`, while the production Vercel API boundary no longer depends on Vercel transpiling `api/*.ts` or `server/*.ts` into a compatible module format
+
+### Decision: add nested Vercel wrappers for `/api/auth/*` and `/api/agent/*`
+- Why:
+  - after the source `.js` wrapper fix, `/api/health` became healthy while `/api/auth/me` still returned a Vercel platform 404 in the live deployment
+  - the local Express app and local wrapper verification both proved `/api/auth/me` itself is valid, so the remaining risk was Vercel route matching for multi-segment API paths rather than business logic
+  - adding nested wrappers is a smaller and safer mitigation than trying to force route matching through broader rewrites during this deployment-debugging phase
+- Impact:
+  - `/api/auth/*` now has an explicit Vercel wrapper at `api/auth/[...route].js`
+  - `/api/agent/*` now has an explicit Vercel wrapper at `api/agent/[...route].js`
+  - the auth and agent paths no longer depend on the root `/api` catch-all matching behavior in production

@@ -405,3 +405,28 @@
 - The fix has been verified locally but still requires a new Vercel redeploy to validate the live runtime.
 - Dashboard aggregation and refresh-state logic still lack targeted automated regression coverage.
 - Bundle-size warnings remain.
+
+## 2026-03-27
+
+### Scope
+- `api/auth/[...route].js`
+- `api/agent/[...route].js`
+- `api/vercel.entry.test.cjs`
+- `docs/context/*`
+
+### Review Mode
+- Manual review only in this session.
+- Independent reviewer-agent pass was not executed because no explicit user authorization for delegation was given in this conversation.
+
+### Findings
+- Medium: after the source `.js` API wrapper fix, the live deployment still returned a Vercel platform 404 for `/api/auth/me` while `/api/health` was already healthy, which suggests the remaining issue was at the Vercel route-matching boundary for multi-segment auth paths rather than inside the Express auth controller.
+
+### Resolved
+- Added explicit nested wrappers for `/api/auth/*` and `/api/agent/*`.
+- Extended the local Vercel entry regression test to cover the guest-safe `GET /api/auth/me` path and the protected `POST /api/agent/query` path through those nested wrappers.
+- Re-ran `npm run test:server` and preview-mode `build:vercel` successfully.
+
+### Remaining Risks
+- The fix has been verified locally but still requires a new Vercel redeploy to validate the live runtime.
+- Dashboard aggregation and refresh-state logic still lack targeted automated regression coverage.
+- Bundle-size warnings remain.

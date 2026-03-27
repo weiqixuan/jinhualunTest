@@ -19,6 +19,7 @@
 - Vercel-target deployment refactor: done
 - Vercel DB deploy gate automated coverage: done
 - Vercel API runtime CommonJS compatibility fix: done
+- Nested auth/agent Vercel wrappers: done
 - Actual Vercel publication: not done yet
 
 ## Latest Implementation Scope
@@ -36,6 +37,8 @@
 - `scripts/vercel-db-deploy.test.cjs`
 - `api/[...route].js`
 - `api/index.js`
+- `api/auth/[...route].js`
+- `api/agent/[...route].js`
 - `api/vercel.entry.test.cjs`
 - `vercel.json`
 - `DESIGN.md`
@@ -58,9 +61,10 @@
 - Independent reviewer-agent re-review found no remaining blocking code-level issue after the DB-deploy guard and `/api` root fixes.
 - The Vercel DB deploy gate now has direct automated coverage for preview skip, production run, forced run, and failure propagation.
 - Manual deployment debugging found that the live Vercel runtime was loading `api/[...route].js` as CommonJS while both the source `api/*.ts` and transitive `server/*.ts` files were emitted as ESM by Vercel's API build path; the API boundary was replaced with source `.js` wrappers that load the prebuilt CommonJS server output.
+- Follow-up deployment debugging found that `/api/health` was healthy while `/api/auth/me` still hit a Vercel platform 404, so nested wrappers were added for `/api/auth/*` and `/api/agent/*`.
 
 ## Recommended Next Task
-1. Redeploy the Vercel project from the latest commit containing the source `.js` API wrapper fix.
+1. Redeploy the Vercel project from the latest commit containing the nested auth/agent wrapper fix.
 2. Verify `/api/health` no longer returns `FUNCTION_INVOCATION_FAILED`.
 3. Verify `/api/auth/me` returns `200 { user: null }` as a guest.
 4. Verify login/register and one protected Mock Agent query.
