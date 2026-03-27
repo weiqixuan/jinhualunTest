@@ -16,7 +16,7 @@
     "build:server": "node -e \"require('fs').rmSync('dist-server', { recursive: true, force: true })\" && tsc -p tsconfig.server.json",
     "build": "npm run build:client && npm run build:server",
     "serve:server": "node dist-server/server/index.js",
-    "test:server": "npm run build:server && node --test scripts/vercel-db-deploy.test.cjs dist-server/api/vercel.entry.test.js dist-server/server/auth/auth.routes.test.js dist-server/server/agent/queryExecutor.test.js dist-server/server/agent/agent.routes.test.js",
+    "test:server": "npm run build:server && node --test scripts/vercel-db-deploy.test.cjs api/vercel.entry.test.cjs dist-server/server/auth/auth.routes.test.js dist-server/server/agent/queryExecutor.test.js dist-server/server/agent/agent.routes.test.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

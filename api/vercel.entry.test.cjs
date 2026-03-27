@@ -1,9 +1,8 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import request from "supertest";
-
-const apiHandler = require("./[...route]");
-const apiRootHandler = require("./index");
+const assert = require("node:assert/strict");
+const test = require("node:test");
+const request = require("supertest");
+const apiHandler = require("./[...route].js");
+const apiRootHandler = require("./index.js");
 
 test("Vercel catch-all handler exposes the API health route", async () => {
   const response = await request(apiHandler).get("/api/health");

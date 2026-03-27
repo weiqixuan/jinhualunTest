@@ -475,16 +475,17 @@
 ## 2026-03-27
 
 ### Task: fix the live Vercel API runtime crash caused by an ESM/CommonJS mismatch
-- Reproduced from the user-provided Vercel Function Logs that the deployed `api/[...route].js` was being loaded as CommonJS while its contents still used ESM `import`
+- Reproduced from the user-provided Vercel Function Logs that the deployed `api/[...route].js` and then transitive `server/app.js` were being loaded as CommonJS while Vercel's API build path emitted ESM syntax
 - Traced the mismatch to Vercel's API build path using the root `tsconfig.json` shape rather than the local server-build CommonJS output
-- Converted `api/[...route].ts` and `api/index.ts` to pure CommonJS-compatible source using `require(...)` plus `module.exports`, while keeping each file free of shared global variable names so TypeScript can still compile them as scripts
-- Updated the Vercel entry regression test so it loads the handlers through `require`, matching the runtime load mode
-- Confirmed the compiled `dist-server/api/*` output now uses `require(...)` and `module.exports`
+- Replaced `api/[...route].ts` and `api/index.ts` with source `.js` wrappers that load the prebuilt CommonJS server output from `dist-server/server/app.js`
+- Replaced the Vercel entry regression test with a source `.cjs` test so it exercises the same wrapper shape used in production
+- Confirmed the new API boundary no longer depends on Vercel transpiling either `api/*.ts` or `server/*.ts` into a compatible module format
 
 ### Files
-- `api/[...route].ts`
-- `api/index.ts`
-- `api/vercel.entry.test.ts`
+- `api/[...route].js`
+- `api/index.js`
+- `api/vercel.entry.test.cjs`
+- `package.json`
 - `docs/context/CURRENT_STATE.md`
 - `docs/context/TASK_BOARD.md`
 - `docs/context/HANDOFF.md`
@@ -494,10 +495,9 @@
 
 ### Verification
 - Ran `npm run build:server`
-- Confirmed `dist-server/api/[...route].js` uses CommonJS syntax
+- Confirmed `dist-server/server/app.js` exists and is CommonJS-loadable
 - Ran `npm run test:server`
 - Ran `cmd /c "set VERCEL_ENV=preview&&npm run build:vercel"`
-- Ran `npx tsc api\\index.ts api\\[...route].ts --module ESNext --moduleResolution Node --target ES2020 --esModuleInterop --allowSyntheticDefaultImports --types node --noEmit`
 
 ### Notes
 - Static frontend deployment was already healthy; the failure was isolated to the Vercel `/api` runtime path

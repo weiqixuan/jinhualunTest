@@ -225,7 +225,7 @@
 - Impact:
   - `render.yaml` and `serve:render` were removed
   - `vercel.json` is now the active repo deployment config
-  - `api/[...route].ts` is the Vercel catch-all API entrypoint
+  - `api/[...route].js` is the Vercel catch-all API entrypoint
   - `server/app.ts` is now API-only and no longer serves `dist/` static files
   - Vercel deployment must use `Root Directory = jinhualunCode`
 
@@ -238,13 +238,13 @@
   - production auth still requires `AUTH_STORAGE=prisma`
   - `build:vercel` assumes a reachable PostgreSQL database so migrations and seed can run during build
 
-### Decision: make the Vercel API entry files explicit CommonJS-compatible source
+### Decision: make the Vercel API boundary source-level JavaScript wrappers over the prebuilt CommonJS server output
 - Why:
   - the root `tsconfig.json` keeps frontend code on `module: ESNext`
-  - the live Vercel API build path emitted `api/[...route].js` with ESM `import`, but the Node runtime loaded that file as CommonJS and crashed before request handling
-  - `export =` still produced a Vercel-side `TS1203` error under the ESNext API compile path, so the safest fix is to avoid TypeScript module syntax entirely in the API entry boundary
-  - changing the API entry files directly is a smaller and safer fix than changing the package-wide module mode or the frontend TypeScript module target
+  - the live Vercel API build path emitted ESM syntax for both the source API entry files and transitive `server/*.ts`, but the Node runtime loaded those files as CommonJS and crashed before request handling
+  - trying to keep the API entrypoints in TypeScript still left Vercel-specific compile/runtime edge cases such as `TS1203` and injected `export {}`
+  - source `.js` wrappers that load `../dist-server/server/app.js` avoid Vercel's TypeScript module-format inference entirely while reusing the already-verified `build:server` CommonJS output
 - Impact:
-  - `api/[...route].ts` and `api/index.ts` now use `require(...)` plus `module.exports`
-  - the Vercel entry regression test now loads the handlers through `require`
-  - frontend TypeScript stays on `module: ESNext` while the Vercel API boundary remains Node CommonJS-compatible
+  - `api/[...route].js` and `api/index.js` now load `../dist-server/server/app.js`
+  - the Vercel entry regression test now lives as `api/vercel.entry.test.cjs` and loads the handlers through `require`
+  - frontend TypeScript stays on `module: ESNext`, while the production Vercel API boundary no longer depends on Vercel transpiling `api/*.ts` or `server/*.ts` into a compatible module format

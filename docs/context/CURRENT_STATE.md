@@ -5,7 +5,7 @@
 - The post-P0 auth extension is now upgraded to a Vercel-ready online-demo shape:
   - Prisma/PostgreSQL-backed auth persistence
   - Vercel deployment config in `vercel.json`
-  - Vercel Node function entry at `api/[...route].ts`
+  - Vercel Node function entry at `api/[...route].js`
   - static frontend output from `dist/`
 - The Agent bonus feature remains demo-ready in Mock-only mode:
   - protected `POST /api/agent/query`
@@ -49,7 +49,7 @@
   - runtime auth repository selection with Prisma as the deploy target
   - Vercel static-site + API split instead of Render single-service hosting
   - `build:vercel` for Vercel builds
-  - explicit CommonJS-compatible Vercel API entry files under `api/*`
+  - source-level CommonJS Vercel API entry files under `api/*.js`
   - removal of `render.yaml` and `serve:render`
   - server tests updated to match the API-only server shape
   - a dedicated regression test for the Vercel catch-all API handler
@@ -76,13 +76,13 @@
   - mock follow-up query honoring an explicit last-month time range
   - unknown `/api/*` routes returning JSON 404 in the API-only server shape
 - `npm run build` passes on 2026-03-27.
-- `npm run build:server` passes on 2026-03-27 after converting `api/*` entry files to explicit CommonJS-compatible source.
+- `npm run build:server` passes on 2026-03-27 after converting `api/*` entry files to source-level CommonJS JavaScript wrappers.
 - `cmd /c "set VERCEL_ENV=preview&&npm run build:vercel"` passes on 2026-03-27:
   - frontend + server build succeed
   - Prisma migrate/seed is skipped outside production as intended
 - Compiled Vercel handler smoke verification on 2026-03-27:
-  - `dist-server/api/[...route].js` exports a callable handler
-  - compiled `api/*` entry output now uses `require(...)` + `module.exports`, matching the Node CommonJS load path that Vercel used at runtime
+  - `dist-server/server/app.js` exports a callable `createApp`
+  - `api/[...route].js` and `api/index.js` load `../dist-server/server/app.js` through `require(...)`, matching the Node CommonJS load path that Vercel used at runtime
 - Remaining build warnings:
   - main entrypoint is about `848 KiB`
   - async dashboard vendor chunk is about `1.08 MiB`
@@ -90,18 +90,18 @@
 ## Latest Review Outcome
 - Manual review for the Vercel migration found and resolved the main deployment-shape mismatch:
   - Render-specific static hosting logic in `server/app.ts` was removed
-  - deployment entry was split into `dist/` static output plus `api/[...route].ts`
+  - deployment entry was split into `dist/` static output plus `api/[...route].js`
 - Independent reviewer-agent re-review found no remaining blocking code-level issue after:
   - gating Vercel DB deploy/seed behind `VERCEL_ENV=production` or `VERCEL_FORCE_DB_DEPLOY=1`
-  - adding `api/index.ts` so bare `/api` keeps the JSON not-found contract
+  - adding `api/index.js` so bare `/api` keeps the JSON not-found contract
 - Follow-up coverage work on 2026-03-27 closed the remaining automated-test gap for the Vercel DB deploy gate:
   - preview skip is covered
   - production and forced execution paths are covered
   - migrate/seed failure propagation is covered
 - Manual deployment debugging on 2026-03-27 found and resolved a Vercel runtime compatibility issue:
   - Vercel was loading `api/[...route].js` as CommonJS
-  - the source API entry files were being emitted as ESM by Vercel's build path because the root `tsconfig.json` uses `module: ESNext`
-  - `api/[...route].ts` and `api/index.ts` now use explicit CommonJS-compatible source so the runtime no longer depends on Vercel's module-format inference
+  - the source TypeScript API entry files were being emitted as ESM by Vercel's build path because the root `tsconfig.json` uses `module: ESNext`
+  - the Vercel API boundary now uses source `.js` wrappers that load the prebuilt CommonJS server output from `dist-server/server/app.js`
 
 ## Next Step
 - Redeploy the current Vercel project from the latest commit that includes the API entry CommonJS compatibility fix.
@@ -114,9 +114,9 @@
 
 ## Key Files
 - `vercel.json`
-- `api/[...route].ts`
-- `api/index.ts`
-- `api/vercel.entry.test.ts`
+- `api/[...route].js`
+- `api/index.js`
+- `api/vercel.entry.test.cjs`
 - `prisma/schema.prisma`
 - `prisma/migrations/*`
 - `prisma/seed.ts`
@@ -139,7 +139,7 @@
 - The repository root is `D:/wqxCode/wqx_code`, so the Vercel project must build from `jinhualunCode` rather than the monorepo root.
 - The current remote/deployment source must be publicly reachable by Vercel or connected through the user Dashboard.
 - `build:vercel` only runs Prisma migrate/seed on production Vercel builds or when `VERCEL_FORCE_DB_DEPLOY=1`, so the deployment still depends on a reachable PostgreSQL connection on that allowed branch.
-- The latest live Vercel deployment has not yet been re-verified after the API entry CommonJS compatibility fix; a redeploy is still required.
+- The latest live Vercel deployment has not yet been re-verified after switching the API boundary to source `.js` wrappers; a redeploy is still required.
 - Local development still falls back to file storage when `DATABASE_URL` is absent; the true online-demo path requires `AUTH_STORAGE=prisma`.
 - The architecture is still mixed: authentication runs behind a real backend/database boundary, while business data still comes from frontend mock services.
 - The Agent still queries the static business snapshot derived from `src/mock/*`, not a real business database.
