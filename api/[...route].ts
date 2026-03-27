@@ -1,5 +1,5 @@
-const { createApp } = require("../server/app");
+const createCatchAllApp = require("../server/app").createApp;
 
-const app = createApp();
+const catchAllApp = createCatchAllApp();
 
-export = app;
+module.exports = catchAllApp;

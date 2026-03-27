@@ -399,6 +399,7 @@
 - Converted the Vercel API entry files to explicit CommonJS-compatible source.
 - Updated the regression test to load the handlers with `require`, matching the Node/Vercel load path.
 - Re-ran `npm run build:server`, `npm run test:server`, and preview-mode `build:vercel` successfully.
+- Confirmed that the API entry files also pass a direct ESNext TypeScript compile check without the previous `TS1203` export-assignment failure.
 
 ### Remaining Risks
 - The fix has been verified locally but still requires a new Vercel redeploy to validate the live runtime.

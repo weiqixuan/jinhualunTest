@@ -242,8 +242,9 @@
 - Why:
   - the root `tsconfig.json` keeps frontend code on `module: ESNext`
   - the live Vercel API build path emitted `api/[...route].js` with ESM `import`, but the Node runtime loaded that file as CommonJS and crashed before request handling
+  - `export =` still produced a Vercel-side `TS1203` error under the ESNext API compile path, so the safest fix is to avoid TypeScript module syntax entirely in the API entry boundary
   - changing the API entry files directly is a smaller and safer fix than changing the package-wide module mode or the frontend TypeScript module target
 - Impact:
-  - `api/[...route].ts` and `api/index.ts` now use `require(...)` plus `export =`
+  - `api/[...route].ts` and `api/index.ts` now use `require(...)` plus `module.exports`
   - the Vercel entry regression test now loads the handlers through `require`
   - frontend TypeScript stays on `module: ESNext` while the Vercel API boundary remains Node CommonJS-compatible

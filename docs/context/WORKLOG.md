@@ -477,7 +477,7 @@
 ### Task: fix the live Vercel API runtime crash caused by an ESM/CommonJS mismatch
 - Reproduced from the user-provided Vercel Function Logs that the deployed `api/[...route].js` was being loaded as CommonJS while its contents still used ESM `import`
 - Traced the mismatch to Vercel's API build path using the root `tsconfig.json` shape rather than the local server-build CommonJS output
-- Converted `api/[...route].ts` and `api/index.ts` to explicit CommonJS-compatible source using `require(...)` plus `export =`
+- Converted `api/[...route].ts` and `api/index.ts` to pure CommonJS-compatible source using `require(...)` plus `module.exports`, while keeping each file free of shared global variable names so TypeScript can still compile them as scripts
 - Updated the Vercel entry regression test so it loads the handlers through `require`, matching the runtime load mode
 - Confirmed the compiled `dist-server/api/*` output now uses `require(...)` and `module.exports`
 
@@ -497,6 +497,7 @@
 - Confirmed `dist-server/api/[...route].js` uses CommonJS syntax
 - Ran `npm run test:server`
 - Ran `cmd /c "set VERCEL_ENV=preview&&npm run build:vercel"`
+- Ran `npx tsc api\\index.ts api\\[...route].ts --module ESNext --moduleResolution Node --target ES2020 --esModuleInterop --allowSyntheticDefaultImports --types node --noEmit`
 
 ### Notes
 - Static frontend deployment was already healthy; the failure was isolated to the Vercel `/api` runtime path

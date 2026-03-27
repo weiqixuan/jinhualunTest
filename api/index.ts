@@ -1,5 +1,5 @@
-const { createApp } = require("../server/app");
+const createApiRootApp = require("../server/app").createApp;
 
-const app = createApp();
+const apiRootApp = createApiRootApp();
 
-export = app;
+module.exports = apiRootApp;
